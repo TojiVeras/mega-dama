@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="description" content="Damas brasileiras em 3D para dois jogadores no mesmo computador." />
+    <meta name="theme-color" content="#0f1116" />
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><circle cx='32' cy='36' r='22' fill='%23222'/><circle cx='32' cy='30' r='22' fill='%23f0e4cc'/><circle cx='32' cy='30' r='11' fill='none' stroke='%23e0b44c' stroke-width='4'/></svg>" />
+    <title>Damas 3D</title>
+  </head>
+  <body>
+    <div id="app"></div>
+
+    <header class="topbar">
+      <div class="brand">Damas <span>3D</span></div>
+
+      <div id="turn" class="turn" data-color="w" aria-live="polite">
+        <span class="disc"></span>
+        <span id="turn-label">Vez das Brancas</span>
+      </div>
+
+      <nav class="actions">
+        <button id="btn-undo" title="Desfazer lance" disabled>↶<span>Desfazer</span></button>
+        <button id="btn-camera" title="Girar a câmera a cada turno" aria-pressed="true">⟲<span>Câmera</span></button>
+        <button id="btn-rules" title="Regras">?<span>Regras</span></button>
+        <button id="btn-new" title="Novo jogo">＋<span>Novo</span></button>
+      </nav>
+    </header>
+
+    <div class="score">
+      <div class="score-item" data-color="w"><span class="disc"></span><b id="count-w">12</b></div>
+      <div class="score-item" data-color="b"><span class="disc"></span><b id="count-b">12</b></div>
+    </div>
+
+    <div id="hint" class="hint" hidden></div>
+    <div id="toast" class="toast" role="status"></div>
+    <p class="help">Arraste as peças · botão direito gira a câmera · roda dá zoom</p>
+
+    <div id="result" class="result" hidden>
+      <div class="result-card">
+        <h2 id="result-title">Brancas vencem!</h2>
+        <p id="result-reason"></p>
+        <button id="btn-again" class="primary">Jogar de novo</button>
+      </div>
+    </div>
+
+    <dialog id="rules">
+      <h2>Regras da Damas Brasileira</h2>
+      <ul>
+        <li>Tabuleiro 8×8, 12 peças por jogador, jogando só nas casas escuras. <b>Brancas começam.</b></li>
+        <li><b>Pedras</b> andam uma casa na diagonal, só para frente. Capturam para frente <i>e para trás</i>.</li>
+        <li>A <b>captura é obrigatória</b>, e você deve sempre capturar o <b>maior número de peças</b> possível (pedra e dama valem o mesmo).</li>
+        <li>Numa captura múltipla, a peça continua saltando; as peças capturadas só saem no fim do lance e não podem ser saltadas duas vezes.</li>
+        <li>A pedra que termina o lance na última fileira vira <b>dama</b>. Se só passar por ela no meio de uma captura, continua pedra.</li>
+        <li>A <b>dama</b> anda e captura à distância, em qualquer diagonal, podendo parar em qualquer casa livre depois da peça capturada.</li>
+        <li>Vence quem capturar todas as peças do adversário ou deixá-lo sem lances.</li>
+        <li>Empate após <span id="draw-moves">20</span> lances sucessivos de cada jogador só com damas, sem captura.</li>
+      </ul>
+      <h3>Controles</h3>
+      <ul>
+        <li>Segure uma peça e arraste até a casa brilhante (ou clique na peça e depois na casa).</li>
+        <li>Anéis amarelos marcam as peças que precisam capturar.</li>
+        <li>Botão direito / dois dedos: girar a câmera. Roda / pinça: zoom.</li>
+      </ul>
+      <button id="btn-close-rules" class="primary">Entendi</button>
+    </dialog>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

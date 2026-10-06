@@ -1,0 +1,4 @@
+# Netlify: conecte o repositório ou arraste a pasta dist/ em https://app.netlify.com/drop
+[build]
+  command = "npm run build"
+  publish = "dist"
