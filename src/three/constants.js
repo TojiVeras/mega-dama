@@ -21,6 +21,20 @@ export const COLORS = {
   mustCapture: 0xffc94a,
 };
 
+// Anel de fogo (fire.js). A altura é um nível de 0 a 1 multiplicado por maxHeight.
+export const FIRE = {
+  gap: 0.6, // folga entre o canto do tabuleiro e o anel
+  maxHeight: 2.2, // altura das chamas com nível 1
+  tongues: 48, // quantidade de línguas de fogo na volta
+  response: 2.5, // velocidade com que a altura persegue o valor pedido
+  groundWidth: 0.9, // meia largura do brilho no chão
+  core: 0xfff1b0,
+  mid: 0xff8a1e,
+  edge: 0xb3200a,
+  light: 0xff7a2a,
+  lightIntensity: 2.5,
+};
+
 export function squareToWorld(sq) {
   return { x: colOf(sq) - SIZE / 2 + 0.5, z: SIZE / 2 - 0.5 - rowOf(sq) };
 }

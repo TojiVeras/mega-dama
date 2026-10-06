@@ -5,6 +5,7 @@ import { Hud } from './hud.js';
 import { InputController } from './input.js';
 import { createBoard } from './three/board.js';
 import { CameraRig } from './three/cameraRig.js';
+import { FireRing, RandomFireDriver } from './three/fire.js';
 import { GlowField } from './three/glow.js';
 import { PieceSet } from './three/pieces.js';
 import { createScene } from './three/scene.js';
@@ -16,6 +17,10 @@ scene.add(createBoard());
 const pieces = new PieceSet(scene);
 const glow = new GlowField(scene);
 const rig = new CameraRig(camera, controls);
+const fire = new FireRing(scene);
+// Por enquanto a altura do fogo é aleatória; para integrar, desligue o driver
+// (fireDriver.enabled = false) e chame fire.setLevel(0..1).
+const fireDriver = new RandomFireDriver(fire);
 
 let input;
 const hud = new Hud({
@@ -52,8 +57,10 @@ renderer.setAnimationLoop((timestamp) => {
   scene.fog.far = dist + 30;
   pieces.update(dt, time);
   glow.update(dt, time);
+  fireDriver.update(time);
+  fire.update(dt, time);
   renderer.render(scene, camera);
 });
 
 // Útil para depurar no console do navegador.
-window.__damas = { game, pieces, rig };
+window.__damas = { game, pieces, rig, fire, fireDriver };

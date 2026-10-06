@@ -33,6 +33,7 @@ src/
     pieces.js          PieceView (malha + animação de cada peça) e PieceSet (coleção).
     glow.js            GlowField: brilho das casas possíveis e anéis de captura obrigatória.
     cameraRig.js       Posição da câmera por jogador e animação de troca de lado.
+    fire.js            FireRing (anel de fogo, altura via setLevel 0..1) e RandomFireDriver (demo).
 index.html             Markup da HUD e diálogo de regras.
 ```
 
