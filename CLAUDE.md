@@ -33,11 +33,39 @@ src/
     pieces.js          PieceView (malha + animação de cada peça) e PieceSet (coleção).
     glow.js            GlowField: brilho das casas possíveis e anéis de captura obrigatória.
     cameraRig.js       Posição da câmera por jogador e animação de troca de lado.
-    fire.js            FireRing (anel de fogo, altura via setLevel 0..1) e RandomFireDriver (demo).
+    fire.js            FireRing (anel de fogo: altura via setLevel 0..1 ou por faixa via setBands) e
+                       RandomFireDriver (demo).
+  music/
+    youtubeUrl.js      parseYouTubeUrl (puro, testado): link/id -> { videoId, listId }.
+    youtube.js         YouTubePlayer: carrega a IFrame API e toca vídeo/playlist.
+    tabAudio.js        TabAudio: captura o áudio da própria aba (getDisplayMedia) e mede o volume (RMS).
+    spectrum.js        logBands / bandBins / bandDb: espectro -> faixas de frequência. Puro, testado.
+    level.js           LevelTracker (volume em dB -> altura 0..1) e DelayLine. Puro, testado.
+    fireSync.js        MusicFireDriver: escolhe o modo do fogo (audio / waiting / idle).
+    panel.js           MusicPanel: painel HTML (botão "Música" na barra).
+    tuning.js          TuningPanel: painel "Ajustes do fogo" com um slider por parâmetro de FIRE (ao vivo,
+                       salvo no localStorage; "Copiar" exporta os valores para constants.js).
 index.html             Markup da HUD e diálogo de regras.
 ```
 
 Fluxo de um lance: `InputController` → `GameController.step(view, casa)` → valida contra `getLegalMoves` → anima a peça → se for captura e ainda houver saltos, guarda `pending` (peça travada) → senão `finishMove` → peças capturadas voam para a pilha lateral → `applyMove` → `CameraRig.goTo(próximo jogador)`.
+
+### Música e fogo
+
+O áudio do iframe do YouTube é de outra origem e **não pode** ser lido pelo Web Audio. Por isso o
+fogo só segue a música quando o usuário compartilha **esta aba com áudio** (Chromium no computador;
+o seletor abre junto com o "Tocar" ou no botão *Sincronizar*). Com captura, a altura do fogo é o
+volume da música (RMS em dB do sinal cheio + graves filtrados < 150 Hz, janela de ~43 ms),
+normalizado entre os percentis 10% e 95% do volume da própria música, estimados ao longo de
+dezenas de segundos (escala automática que não "achata" verso baixo × refrão alto), sem atraso
+(compensar a latência de saída deixava o fogo atrasado). No `FireRing`, volume e faixas seguem o
+alvo com mola criticamente amortecida (`spring`, `FIRE.rise`/`FIRE.fall`) para subir e descer
+sem tranco; o volume move a luz
+e o brilho do chão. Opcionalmente (botão "Frequência" no painel, `FIRE.spectrum.enabled`, `fireDriver.useSpectrum`), o anel vira um **equalizador**: `FIRE.bands` (32) faixas log de 40 Hz a 12 kHz, cada uma
+com seu `LevelTracker` (escala própria), vão para uma textura 1D lida pelo shader. O espectro é
+espelhado duas vezes na volta: graves na frente de cada jogador (+z/-z), agudos nas laterais. Sem
+captura o fogo fica baixo e parado; sem música (ou pausada), volta ao `RandomFireDriver`. Ajuste a
+"sensação" em `FIRE.music` (`constants.js`); `__damas.fireDriver.offset` ajusta o atraso ao vivo.
 
 ### Convenções importantes
 
@@ -63,7 +91,7 @@ Tudo em `src/game/rules.js`, coberto por `rules.test.js`. Ao alterar regras, **e
 - Pedra só é promovida se **terminar** o lance na última fileira.
 - Derrota sem peças ou sem lances; empate após `DRAW_KING_MOVES` (20) lances de cada jogador só com damas, sem captura.
 
-Não implementado (ideias): regras de final (ex.: 2 damas × 1 dama em 5 lances), empate por repetição, proposta de empate, IA, multiplayer online, sons.
+Não implementado (ideias): regras de final (ex.: 2 damas × 1 dama em 5 lances), empate por repetição, proposta de empate, IA, multiplayer online, efeitos sonoros.
 
 ## Publicação
 

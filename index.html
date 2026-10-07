@@ -22,6 +22,7 @@
       <nav class="actions">
         <button id="btn-undo" title="Desfazer lance" disabled>↶<span>Desfazer</span></button>
         <button id="btn-camera" title="Girar a câmera a cada turno" aria-pressed="true">⟲<span>Câmera</span></button>
+        <button id="btn-music" title="Música do YouTube" aria-pressed="false" aria-controls="music">♪<span>Música</span></button>
         <button id="btn-rules" title="Regras">?<span>Regras</span></button>
         <button id="btn-new" title="Novo jogo">＋<span>Novo</span></button>
       </nav>
@@ -35,6 +36,50 @@
     <div id="hint" class="hint" hidden></div>
     <div id="toast" class="toast" role="status"></div>
     <p class="help">Arraste as peças · botão direito gira a câmera · roda dá zoom</p>
+
+    <section id="music" class="music" aria-label="Música" inert>
+      <div class="music-head">
+        <span id="music-status" class="music-status">Fogo em modo demonstração</span>
+        <button id="music-close" class="music-close" title="Fechar">✕</button>
+      </div>
+      <form id="music-form" class="music-form">
+        <input id="music-url" type="url" inputmode="url" placeholder="Link do YouTube (vídeo ou playlist)" autocomplete="off" />
+        <button class="primary">Tocar</button>
+      </form>
+      <div class="music-video"><div id="yt-player"></div></div>
+      <div class="music-sync">
+        <button id="music-sync" aria-pressed="false">🔥 Sincronizar fogo com o áudio</button>
+        <div class="music-mode" role="group" aria-label="Altura do fogo">
+          <span>Altura do fogo:</span>
+          <button id="mode-volume" aria-pressed="true">Volume</button>
+          <button id="mode-spectrum" aria-pressed="false">Frequência</button>
+        </div>
+        <div class="music-meters">
+          <span>Som</span>
+          <div class="music-meter sound"><span id="meter-sound"></span></div>
+          <b id="meter-sound-val">–</b>
+          <span>Fogo</span>
+          <div class="music-meter"><span id="meter-fire"></span></div>
+          <b id="meter-fire-val">0%</b>
+        </div>
+        <button id="btn-tuning" aria-pressed="false" aria-controls="tuning">⚙ Ajustes do fogo</button>
+      </div>
+      <p class="music-note">
+        Para o fogo seguir a música, ao tocar escolha <b>esta aba</b> e marque <b>Compartilhar áudio da aba</b>
+        (Chrome/Edge no computador). Sem isso o navegador não deixa o jogo ouvir o YouTube e o fogo fica parado.
+      </p>
+    </section>
+
+    <aside id="tuning" class="tuning" aria-label="Ajustes do fogo" inert>
+      <div class="tuning-head">
+        <b>Ajustes do fogo</b>
+        <button data-action="copy" title="Copiar os valores (para colar em constants.js)">Copiar</button>
+        <button data-action="reset" title="Voltar todos os valores ao padrão">Padrão</button>
+        <button id="tuning-close" class="music-close" title="Fechar">✕</button>
+      </div>
+      <p class="tuning-note">Vale na hora e fica salvo neste navegador. Passe o mouse para ver a explicação; duplo clique volta ao padrão.</p>
+      <div class="tuning-body"></div>
+    </aside>
 
     <div id="result" class="result" hidden>
       <div class="result-card">

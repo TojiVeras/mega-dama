@@ -18,7 +18,7 @@ export function createScene(container) {
 
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(BG);
-  scene.fog = new THREE.Fog(BG, 18, 38);
+  scene.fog = new THREE.Fog(BG, 12, 26);
 
   const pmrem = new THREE.PMREMGenerator(renderer);
   scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
@@ -30,7 +30,7 @@ export function createScene(container) {
   // Mesa
   const table = new THREE.Mesh(
     new THREE.CircleGeometry(30, 64),
-    new THREE.MeshStandardMaterial({ color: 0x241a14, roughness: 0.9 }),
+    new THREE.MeshStandardMaterial({ color: 0x110c09, roughness: 0.9 }),
   );
   table.rotation.x = -Math.PI / 2;
   table.position.y = TABLE_Y;

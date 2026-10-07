@@ -3,8 +3,12 @@ import './style.css';
 import { GameController } from './controller.js';
 import { Hud } from './hud.js';
 import { InputController } from './input.js';
+import { MusicFireDriver } from './music/fireSync.js';
+import { MusicPanel } from './music/panel.js';
+import { TuningPanel } from './music/tuning.js';
 import { createBoard } from './three/board.js';
 import { CameraRig } from './three/cameraRig.js';
+import { FIRE } from './three/constants.js';
 import { FireRing, RandomFireDriver } from './three/fire.js';
 import { GlowField } from './three/glow.js';
 import { PieceSet } from './three/pieces.js';
@@ -17,10 +21,20 @@ scene.add(createBoard());
 const pieces = new PieceSet(scene);
 const glow = new GlowField(scene);
 const rig = new CameraRig(camera, controls);
+// Aplica os ajustes salvos do painel "Ajustes do fogo" antes de tudo que lê FIRE.
+const tuning = new TuningPanel({
+  root: document.getElementById('tuning'),
+  fire: FIRE,
+  flash: (msg) => hud.flash(msg),
+  // Só é chamado por interação do usuário, quando tudo abaixo já existe.
+  onChange: () => {
+    fireDriver.applySettings();
+    music.tabAudio.applySettings();
+  },
+});
 const fire = new FireRing(scene);
-// Por enquanto a altura do fogo é aleatória; para integrar, desligue o driver
-// (fireDriver.enabled = false) e chame fire.setLevel(0..1).
-const fireDriver = new RandomFireDriver(fire);
+// Sem música, a altura do fogo é aleatória (demonstração).
+const idleFireDriver = new RandomFireDriver(fire);
 
 let input;
 const hud = new Hud({
@@ -35,6 +49,23 @@ const hud = new Hud({
   },
   onToggleCamera: (on) => game.setAutoCamera(on),
 });
+
+let fireDriver;
+const music = new MusicPanel({
+  flash: (msg) => hud.flash(msg),
+  spectrum: FIRE.spectrum.enabled,
+  onSpectrumChange: (on) => {
+    if (fireDriver) fireDriver.useSpectrum = on;
+  },
+});
+// Com música tocando, o fogo segue o volume do áudio (ou cada faixa de frequência).
+fireDriver = new MusicFireDriver({
+  fire,
+  player: music.player,
+  tabAudio: music.tabAudio,
+  idleDriver: idleFireDriver,
+});
+fireDriver.useSpectrum = music.spectrum;
 
 const game = new GameController({ pieces, glow, rig, hud });
 input = new InputController({ canvas: renderer.domElement, camera, pieces, game });
@@ -53,14 +84,15 @@ renderer.setAnimationLoop((timestamp) => {
   if (!rig.animating) controls.update(dt);
   // Névoa acompanha a distância da câmera (no celular em pé a câmera fica bem mais longe).
   const dist = camera.position.distanceTo(controls.target);
-  scene.fog.near = dist + 4;
-  scene.fog.far = dist + 30;
+  scene.fog.near = dist + 2;
+  scene.fog.far = dist + 14;
   pieces.update(dt, time);
   glow.update(dt, time);
-  fireDriver.update(time);
+  fireDriver.update(dt, time);
   fire.update(dt, time);
+  music.render(fireDriver.mode, fireDriver.sound, fire.level);
   renderer.render(scene, camera);
 });
 
 // Útil para depurar no console do navegador.
-window.__damas = { game, pieces, rig, fire, fireDriver };
+window.__damas = { game, pieces, rig, fire, fireDriver, music, tuning };
