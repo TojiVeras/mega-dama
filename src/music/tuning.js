@@ -75,6 +75,7 @@ export const TUNING = [
   {
     group: 'Paredes do fogo',
     items: [
+      ['maxHeight', 'Altura máxima', 0.5, 8, 0.1, 'Altura das chamas com nível 100%; maior = fogo mais alto.'],
       ['walls.inner', 'Raio do anel menor', 0.6, 1, 0.005, 'Base do anel interno (fração do externo); menor = triângulo mais largo.'],
       ['walls.apex', 'Ponto de encontro', 0, 1, 0.01, '0 = paredes se encontram no raio do maior; 1 = no do menor.'],
       ['walls.meet', 'Altura do encontro', 0.2, 3, 0.05, 'Em relação à altura da chama; maior = paredes mais em pé.'],

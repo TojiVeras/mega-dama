@@ -15,6 +15,14 @@ export const DRAG_LIFT = 0.12; // altura normal da peça segurada (abaixo do top
 export const FLY_MARGIN = 0.1; // folga acima de uma peça ao sobrevoá-la
 export const SELECT_LIFT = 0.12; // peça selecionada por clique
 
+// Captura múltipla arrastando: parar a peça sobre um pouso intermediário enche um
+// relógio; ao completar, o pouso conta como jogado e o arraste continua dali.
+export const DWELL = {
+  time: 0.6, // segundos parado sobre a casa para confirmar
+  maxSpeed: 1.5, // casas/s: acima disso a peça está "passando", o relógio não avança
+  drain: 2, // quão rápido o relógio esvazia enquanto a peça se move (x tempo de encher)
+};
+
 export const COLORS = {
   move: 0x48d6ff,
   capture: 0xff9d2e,
@@ -72,11 +80,28 @@ export const FIRE = {
     release: 10.2, // queda do fogo depois da batida (maior = mais seco)
     curve: 0.7, // altura exponencial: sobe pouco no começo e muito no final (0 = linear)
     silenceDb: -80, // abaixo disso o fogo fica apagado
-    bassWeight: 0.5, // peso dos graves no volume (0 = só o som cheio, 1 = só graves)
+    bassWeight: 0.35, // peso dos graves no volume (0 = só o som cheio, 1 = só graves)
     bassCutoff: 160, // Hz: até onde conta como grave
     offset: 0, // atraso (s) aplicado ao fogo; aumente só se ele vier adiantado em relação ao som
     waitingLevel: 0.23, // altura parada enquanto a música toca sem captura do áudio
   },
+};
+
+// Pentagrama de fogo dentro do anel (pentagram.js). A força cresce com as peças
+// capturadas no jogo (0 = nenhuma, 1 = `total`).
+export const PENTAGRAM = {
+  radius: 0.9, // raio das pontas da estrela (fração do raio do anel de fogo)
+  rotation: 0, // giro da estrela (rad); 0 = uma ponta para +x (lateral, igual para os dois lados)
+  maxHeight: 0.8, // altura máxima das chamas (bem menor que a do anel)
+  width: 0.12, // meia largura da base das chamas (as duas paredes inclinam até o centro)
+  tongues: 2, // línguas de fogo por unidade de comprimento
+  groundWidth: 0.35, // meia largura do brilho no chão sob as linhas
+  total: 24, // capturas para a força máxima
+  minHeight: 0.3, // altura (fração de maxHeight) logo na primeira captura
+  opacityCurve: 2, // opacidade cresce com força^curva: devagar no começo e rápido no fim
+  minOpacity: 0.08, // opacidade logo na primeira captura (bem fraquinha)
+  pulse: 0.25, // quanto a altura acompanha o anel de fogo (música); 0 = só as capturas
+  response: 1.2, // velocidade com que a força persegue o número de capturas
 };
 
 export function squareToWorld(sq) {
@@ -121,3 +146,51 @@ export function spring(state, target, omega, dt) {
 }
 
 export const damp = (current, target, rate, dt) => current + (target - current) * (1 - Math.exp(-rate * dt));
+
+// Raio que cai na peça capturada (lightning.js) e som do trovão (sound/thunder.js).
+export const LIGHTNING = {
+  height: 14, // altura de onde o raio sai (acima da câmera; a névoa não afeta o raio)
+  spread: 3, // desvio horizontal máximo da origem do raio em relação à peça
+  descend: 0.09, // s: tempo do raio descer do céu até a peça
+  duration: 0.55, // s: brilho e piscadas depois do impacto
+  core: 0xf4f8ff,
+  halo: 0x8fb4ff,
+  light: 0xbcd2ff,
+  lightIntensity: 40, // luz pontual no impacto
+  skyIntensity: 3, // clarão geral da cena
+  volume: 0.8, // volume do trovão (0..1)
+};
+
+// Cratera queimada que fica onde o raio caiu até o fim do jogo (crater.js).
+export const CRATER = {
+  size: 1.15, // diâmetro (casas)
+  depth: 4, // força do relevo (bumpScale): fundo afundado e borda levantada
+  emberGlow: 2.5, // brilho das brasas logo depois do impacto
+  cooling: 2.5, // s: quão rápido as brasas esfriam
+  residualGlow: 0.08, // brilho fraco que sobra nas rachaduras
+};
+
+// Sons das peças (sound/pieces.js): batidas ao segurar/pousar/empilhar e sopro ao mover.
+export const PIECE_SOUND = {
+  volume: 0.7, // volume geral das batidas (0..1)
+  motion: 0.25, // volume do som de movimento na velocidade máxima
+};
+
+// Bandeja que segura o tabuleiro e as pilhas de peças capturadas (scene.js). Fica no
+// lugar da antiga mesa: abaixo dela não há chão, só o demônio que a segura (demon.js).
+export const TRAY = {
+  halfX: 6.15, // meia largura em x (cobre as pilhas laterais em BOARD_EXTENT + 0.75)
+  halfZ: 4.95, // meia profundidade em z
+  thickness: 0.22, // espessura: ~0,0011 × DEMON.scale para o polegar encostar no topo (dedos embaixo)
+  corner: 0.45, // raio dos cantos arredondados
+  color: 0x1c120c,
+};
+
+// Demônio gigante (demon.js) que segura a bandeja pela borda -x, de frente para +x.
+export const DEMON = {
+  scale: 200, // o modelo tem ~0,065 de altura; 200 = ~13 casas
+  side: -1, // borda da bandeja segurada: -1 = esquerda das brancas, 1 = direita
+  grip: 0.25, // onde fica a borda da bandeja na palma: 0 = no pulso, 1 = na ponta dos dedos
+  breathe: 1, // intensidade do movimento parado (asas, cauda, cabeça); 0 = estátua
+  roughness: 0.55, // o modelo vem com rugosidade 0 (plástico molhado); a textura modula
+};

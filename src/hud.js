@@ -5,7 +5,7 @@ const $ = (id) => document.getElementById(id);
 
 /** Interface HTML sobreposta ao canvas. */
 export class Hud {
-  constructor({ onNewGame, onUndo, onToggleCamera }) {
+  constructor({ onNewGame, onUndo, onResign, onToggleCamera }) {
     this.turnEl = $('turn');
     this.turnLabel = $('turn-label');
     this.whiteCount = $('count-w');
@@ -14,6 +14,7 @@ export class Hud {
     this.toast = $('toast');
     this.undoBtn = $('btn-undo');
     this.result = $('result');
+    this.lightningEl = $('lightning-flash');
     this.flashTimer = null;
 
     $('btn-new').addEventListener('click', () => {
@@ -21,6 +22,10 @@ export class Hud {
     });
     $('btn-again').addEventListener('click', onNewGame);
     this.undoBtn.addEventListener('click', onUndo);
+    this.resignBtn = $('btn-resign');
+    this.resignBtn.addEventListener('click', () => {
+      if (confirm(`As ${NAMES[this.turnEl.dataset.color]} desistem da partida?`)) onResign();
+    });
     $('btn-rules').addEventListener('click', () => $('rules').showModal());
     $('btn-close-rules').addEventListener('click', () => $('rules').close());
     $('btn-camera').addEventListener('click', (e) => {
@@ -31,12 +36,13 @@ export class Hud {
     $('draw-moves').textContent = DRAW_KING_MOVES;
   }
 
-  update({ turn, white, black, mustCapture, maxCaptures, continuing, canUndo, kingMoves }) {
+  update({ turn, white, black, mustCapture, maxCaptures, continuing, canUndo, over, kingMoves }) {
     this.turnEl.dataset.color = turn;
     this.turnLabel.textContent = `Vez das ${NAMES[turn]}`;
     this.whiteCount.textContent = white;
     this.blackCount.textContent = black;
     this.undoBtn.disabled = !canUndo;
+    this.resignBtn.disabled = over;
 
     let hint = '';
     if (continuing) hint = 'Continue capturando com a mesma peça';
@@ -52,6 +58,18 @@ export class Hud {
     this.toast.classList.add('show');
     clearTimeout(this.flashTimer);
     this.flashTimer = setTimeout(() => this.toast.classList.remove('show'), 1800);
+  }
+
+  /** Clarão branco-azulado na tela inteira e tremida rápida (raio). */
+  lightningFlash() {
+    for (const [el, cls] of [
+      [this.lightningEl, 'strike'],
+      [$('app'), 'shake'],
+    ]) {
+      el.classList.remove(cls);
+      void el.offsetWidth; // reinicia a animação CSS
+      el.classList.add(cls);
+    }
   }
 
   showResult(result) {

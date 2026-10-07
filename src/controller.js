@@ -6,8 +6,9 @@ import {
   movesMatchingPrefix,
   nextLandings,
   opponent,
+  resign,
 } from './game/rules.js';
-import { DRAG_LIFT, FLY_MARGIN, easeOutCubic, squareToWorld, trayPosition } from './three/constants.js';
+import { DRAG_LIFT, FLY_MARGIN, LIGHTNING, easeOutCubic, squareToWorld, trayPosition } from './three/constants.js';
 
 /**
  * Orquestra o jogo: guarda o estado das regras, o histórico (desfazer), o
@@ -15,11 +16,14 @@ import { DRAG_LIFT, FLY_MARGIN, easeOutCubic, squareToWorld, trayPosition } from
  * brilhos, câmera e HUD.
  */
 export class GameController {
-  constructor({ pieces, glow, rig, hud }) {
+  constructor({ pieces, glow, rig, hud, lightning, thunder, craters }) {
     this.pieces = pieces;
     this.glow = glow;
     this.rig = rig;
     this.hud = hud;
+    this.lightning = lightning;
+    this.thunder = thunder;
+    this.craters = craters;
     this.autoCamera = true;
     this.busy = false;
     this.newGame(false);
@@ -29,6 +33,7 @@ export class GameController {
     this.state = createInitialState();
     this.history = [];
     this.pending = null;
+    this.craters?.clear();
     this.rebuildViews();
     this.refresh();
     if (animateCamera) this.turnCamera();
@@ -72,6 +77,38 @@ export class GameController {
       if (m.path.length > prefix.length) result.set(m.path[prefix.length], m.captures.length ? 'capture' : 'move');
     }
     return result;
+  }
+
+  /**
+   * `to` é um pouso intermediário de captura múltipla (depois dele ainda há
+   * capturas obrigatórias)? Usado para confirmar o pouso sem soltar a peça.
+   */
+  isWaypoint(view, to) {
+    if (this.busy || this.landingsFor(view).get(to) !== 'capture') return false;
+    const from = this.pending ? this.pending.from : this.squareOf(view);
+    const prefix = this.pending ? [...this.pending.prefix, to] : [to];
+    return movesMatchingPrefix(this.legal, from, prefix).every((m) => m.path.length > prefix.length);
+  }
+
+  /**
+   * Registra um pouso intermediário enquanto a peça continua sendo arrastada:
+   * o raio cai na peça capturada e o lance fica pendente a partir de `to`.
+   */
+  markWaypoint(view, to) {
+    if (!this.isWaypoint(view, to)) return false;
+    const from = this.pending ? this.pending.from : this.squareOf(view);
+    const prefix = this.pending ? [...this.pending.prefix, to] : [to];
+    const captureSq = movesMatchingPrefix(this.legal, from, prefix)[0].captures[prefix.length - 1];
+    this.pending = { pieceId: view.id, from, prefix };
+
+    const captured = this.pieces.get(this.state.board[captureSq].id);
+    const strike = this.strike(captured).then(() => {
+      if (!captured.inTray) captured.marked = true;
+    });
+    // finishMove espera os raios em andamento antes de levar as peças para a pilha.
+    this.strikes = Promise.all([this.strikes, strike]);
+    this.refresh();
+    return true;
   }
 
   /** Mostra os brilhos das casas possíveis para a peça (ou limpa, se null). */
@@ -128,6 +165,7 @@ export class GameController {
 
     if (captureSq !== undefined) {
       const captured = this.pieces.get(this.state.board[captureSq].id);
+      await this.strike(captured);
       captured.marked = true;
     }
 
@@ -142,8 +180,21 @@ export class GameController {
     return true;
   }
 
+  /** Raio cai do céu na peça capturada (com trovão e clarão na tela). */
+  async strike(view) {
+    if (!this.lightning) return;
+    const { x, z } = view.position;
+    this.thunder?.play(LIGHTNING.descend);
+    await this.lightning.strike(x, view.height, z);
+    // A cratera pertence ao lance atual: some se ele for desfeito.
+    this.craters?.add(x, z, this.history.length);
+    view.zap = 1;
+    this.hud.lightningFlash();
+  }
+
   async finishMove(move) {
     this.busy = true;
+    await this.strikes;
     this.pending = null;
     const mover = this.pieces.get(this.state.board[move.from].id);
 
@@ -191,12 +242,14 @@ export class GameController {
     if (this.pending) {
       // Cancela a captura múltipla em andamento.
       this.pending = null;
+      this.craters?.removeFrom(this.history.length);
       this.rebuildViews();
       this.refresh();
       return;
     }
     if (!this.history.length) return;
     this.state = this.history.pop();
+    this.craters?.removeFrom(this.history.length);
     this.hud.hideResult();
     this.rebuildViews();
     this.refresh();
@@ -204,6 +257,19 @@ export class GameController {
     await this.turnCamera();
     this.busy = false;
     this.refresh();
+  }
+
+  /** O jogador da vez desiste (cancela a captura em andamento; dá para desfazer). */
+  resign() {
+    if (this.busy || this.rig.animating || this.state.result) return;
+    if (this.pending) {
+      this.pending = null;
+      this.rebuildViews();
+    }
+    this.history.push(this.state);
+    this.state = resign(this.state);
+    this.refresh();
+    this.hud.showResult(this.state.result);
   }
 
   /** Esconde os anéis de captura obrigatória enquanto uma peça é arrastada. */
@@ -265,6 +331,7 @@ export class GameController {
       maxCaptures: mustCapture ? this.legal[0].captures.length : 0,
       continuing: !!this.pending,
       canUndo: this.history.length > 0 || !!this.pending,
+      over: !!this.state.result,
       kingMoves: this.state.kingMovesWithoutProgress,
     });
   }

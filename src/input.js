@@ -1,15 +1,19 @@
 import * as THREE from 'three';
-import { BOARD_EXTENT, DRAG_LIFT, SELECT_LIFT, worldToSquare } from './three/constants.js';
+import { DwellRing } from './dwellRing.js';
+import { BOARD_EXTENT, DRAG_LIFT, DWELL, SELECT_LIFT, worldToSquare } from './three/constants.js';
 
 const CLICK_TOLERANCE_PX = 6;
 
 /**
  * Mouse/toque: passar por cima destaca a peça, segurar e arrastar move a peça
  * livremente até a casa desejada. Também funciona com clique na peça + clique na casa.
+ * Na captura múltipla, parar a peça arrastada sobre um pouso intermediário enche
+ * um relógio que confirma aquele pouso sem soltar a peça.
  */
 export class InputController {
-  constructor({ canvas, camera, pieces, game }) {
+  constructor({ canvas, camera, pieces, game, sounds }) {
     this.canvas = canvas;
+    this.sounds = sounds;
     this.camera = camera;
     this.pieces = pieces;
     this.game = game;
@@ -22,6 +26,7 @@ export class InputController {
     this.hovered = null;
     this.selected = null; // seleção por clique
     this.drag = null;
+    this.ring = new DwellRing(canvas, camera);
 
     canvas.addEventListener('pointermove', this.onMove);
     canvas.addEventListener('pointerdown', this.onDown);
@@ -98,6 +103,41 @@ export class InputController {
     this.updateTargets();
   };
 
+  /** Relógio de pouso intermediário: avança enquanto a peça arrastada fica parada na casa. */
+  update(dt) {
+    const d = this.drag;
+    if (!d?.moved || !d.target) return;
+    const { x, z } = d.target;
+    const speed = d.last ? Math.hypot(x - d.last.x, z - d.last.z) / Math.max(dt, 1e-3) : 0;
+    d.last = { x, z };
+    const sq = worldToSquare(x, z);
+    if (!this.game.isWaypoint(d.view, sq)) {
+      this.clearDwell();
+      return;
+    }
+    if (d.dwell?.sq !== sq) d.dwell = { sq, t: 0 };
+    const rate = speed < DWELL.maxSpeed ? 1 : -DWELL.drain;
+    d.dwell.t = THREE.MathUtils.clamp(d.dwell.t + (rate * dt) / DWELL.time, 0, 1);
+    if (d.dwell.t >= 1) {
+      // Conta como jogado ali; a peça continua na mão para o próximo salto.
+      d.dwell = null;
+      this.ring.complete();
+      this.sounds?.hit('tap');
+      this.game.markWaypoint(d.view, sq);
+      this.updateTargets(sq);
+    } else if (d.dwell.t > 0) {
+      this.ring.show(sq, d.dwell.t);
+    } else {
+      this.ring.hide();
+    }
+  }
+
+  clearDwell() {
+    if (!this.drag?.dwell) return;
+    this.drag.dwell = null;
+    this.ring.hide();
+  }
+
   onDown = (event) => {
     if (event.button !== 0 || this.drag) return;
     this.setRay(event);
@@ -105,6 +145,7 @@ export class InputController {
 
     const view = this.pieceUnderPointer();
     if (view && this.game.canPick(view)) {
+      this.sounds?.hit('pick');
       if (this.selected && this.selected !== view) this.deselect();
       const p = this.pointOnPlane(DRAG_LIFT);
       this.drag = {
@@ -115,6 +156,8 @@ export class InputController {
         moved: false,
         offset: p ? { x: view.position.x - p.x, z: view.position.z - p.z } : { x: 0, z: 0 },
         target: null,
+        last: null,
+        dwell: null, // { sq, t }: relógio de pouso intermediário
       };
       view.tween = null;
       view.hoverTarget = 1;
@@ -125,6 +168,9 @@ export class InputController {
       this.updateTargets();
       return;
     }
+
+    // Peça que não pode ser movida agora: só uma batidinha.
+    if (view && view !== this.selected) this.sounds?.hit('tap');
 
     // Clique numa casa com uma peça selecionada.
     const active = this.selected ?? this.game.lockedView;
@@ -143,6 +189,7 @@ export class InputController {
   onUp = (event) => {
     const d = this.drag;
     if (!d || event.pointerId !== d.pointerId) return;
+    this.clearDwell();
     this.drag = null;
     this.game.suppressRings(false);
     if (this.canvas.hasPointerCapture(event.pointerId)) this.canvas.releasePointerCapture(event.pointerId);
@@ -175,6 +222,7 @@ export class InputController {
   onCancel = (event) => {
     const d = this.drag;
     if (!d || event.pointerId !== d.pointerId) return;
+    this.clearDwell();
     this.drag = null;
     this.game.suppressRings(false);
     d.view.follow = null;
@@ -201,6 +249,7 @@ export class InputController {
 
   /** Chamado quando o estado muda por fora (novo jogo, desfazer). */
   reset() {
+    this.ring.hide();
     this.drag = null;
     this.game.suppressRings(false);
     this.selected = null;

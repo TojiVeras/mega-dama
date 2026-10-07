@@ -66,6 +66,8 @@ function pieceMaterial(color) {
   });
 }
 
+const ZAP_COLOR = new THREE.Color(0xcfe0ff);
+
 /** Representação 3D de uma peça. Toda a animação dela acontece em update(). */
 export class PieceView {
   constructor(piece) {
@@ -75,6 +77,8 @@ export class PieceView {
     this.king = false;
     this.inTray = false;
     this.marked = false; // capturada durante um lance em andamento
+    this.zap = 0; // brilho do raio que atingiu a peça (1 -> 0)
+    this.onLand = null; // (view, kind, strength) ao terminar um moveTo ou encaixar a coroa (som)
 
     this.material = pieceMaterial(piece.color);
     this.group = new THREE.Group();
@@ -177,6 +181,9 @@ export class PieceView {
       if (tw.t >= 1) {
         pos.copy(tw.to);
         this.tween = null;
+        // Batida mais forte quanto mais alto a peça veio.
+        const drop = Math.max(tw.arc, tw.from.y - tw.to.y);
+        this.onLand?.(this, this.inTray ? 'stack' : 'board', THREE.MathUtils.clamp(0.45 + drop * 1.5, 0.45, 1));
         tw.resolve();
       }
     } else if (this.follow) {
@@ -202,7 +209,10 @@ export class PieceView {
       const e = 1 - Math.pow(1 - ct.t, 3);
       this.crown.position.y = H + (1 - e) * 1.2;
       this.crown.scale.setScalar(Math.max(0.01, e));
-      if (ct.t >= 1) this.crownTween = null;
+      if (ct.t >= 1) {
+        this.crownTween = null;
+        this.onLand?.(this, 'crown', 1);
+      }
     }
 
     // Destaque ao passar o mouse e pulso vermelho quando marcada para captura.
@@ -213,6 +223,13 @@ export class PieceView {
     } else {
       this.material.emissive.setHex(this.color === WHITE ? 0xfff6e6 : 0x9aa0b4);
       this.material.emissiveIntensity = this.hover * (this.color === WHITE ? 0.3 : 0.45);
+    }
+    // Atingida pelo raio: clarão azulado que volta à cor normal.
+    if (this.zap > 0) {
+      this.zap = Math.max(0, this.zap - dt * 2.2);
+      const z = this.zap * this.zap;
+      this.material.emissive.lerp(ZAP_COLOR, z);
+      this.material.emissiveIntensity += z * 2.5;
     }
   }
 
@@ -226,6 +243,7 @@ export class PieceSet {
   constructor(scene) {
     this.scene = scene;
     this.byId = new Map();
+    this.onLand = null; // repassado de cada PieceView (sons)
   }
 
   clear() {
@@ -238,6 +256,7 @@ export class PieceSet {
 
   add(piece, sq) {
     const view = new PieceView(piece);
+    view.onLand = (...args) => this.onLand?.(...args);
     view.placeAt(sq);
     this.byId.set(piece.id, view);
     this.scene.add(view.group);
@@ -267,6 +286,13 @@ export class PieceSet {
     }
     return h;
   };
+
+  /** Velocidade da peça mais rápida que está se movendo (arrastada ou em animação). */
+  maxSpeed() {
+    let speed = 0;
+    for (const v of this.byId.values()) if (v.follow || v.tween) speed = Math.max(speed, v.velocity.length());
+    return speed;
+  }
 
   update(dt, time) {
     for (const v of this.byId.values()) v.update(dt, time);

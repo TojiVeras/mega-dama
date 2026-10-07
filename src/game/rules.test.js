@@ -7,6 +7,7 @@ import {
   createInitialState,
   getLegalMoves,
   nextLandings,
+  resign,
   squareName,
   stateFromPieces,
 } from './rules.js';
@@ -118,5 +119,14 @@ describe('fim de jogo', () => {
       s = applyMove(s, m);
     }
     expect(s.result?.type).toBe('draw');
+  });
+
+  it('desistência dá a vitória ao adversário sem mexer no tabuleiro', () => {
+    const s = createInitialState();
+    const next = resign(s);
+    expect(next.result).toMatchObject({ type: 'win', winner: BLACK });
+    expect(next.board).toEqual(s.board);
+    expect(s.result).toBeNull();
+    expect(resign(next)).toBe(next); // jogo já terminado: nada muda
   });
 });

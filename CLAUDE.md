@@ -35,6 +35,17 @@ src/
     cameraRig.js       Posição da câmera por jogador e animação de troca de lado.
     fire.js            FireRing (anel de fogo: altura via setLevel 0..1 ou por faixa via setBands) e
                        RandomFireDriver (demo).
+    pentagram.js       PentagramFire: pentagrama de fogo dentro do anel (mesmo shader de chamas). Força =
+                       capturas / 24 (setCaptured); altura linear, opacidade em curva. Ajustes em PENTAGRAM.
+    lightning.js       LightningField: raio que cai na peça capturada (tubos aditivos, galhos, faíscas,
+                       onda de choque, luz de impacto). Ajustes em LIGHTNING (constants.js).
+    crater.js          CraterField: cratera queimada (texturas de canvas: cor, relevo, brasas) onde o raio
+                       caiu. Fica até o fim do jogo; `tag` = history.length, some ao desfazer o lance.
+  sound/
+    audio.js           AudioContext compartilhado (unlockAudio no primeiro pointerdown) e buffers de ruído.
+    thunder.js         ThunderSound: som de raio sintetizado com Web Audio (estalo + estrondo + trovão).
+    pieces.js          PieceSounds: batidas sintetizadas (pick/tap/board/stack/crown) e sopro contínuo que
+                       segue PieceSet.maxSpeed(). Pouso vem de PieceView.onLand (fim do moveTo / coroa).
   music/
     youtubeUrl.js      parseYouTubeUrl (puro, testado): link/id -> { videoId, listId }.
     youtube.js         YouTubePlayer: carrega a IFrame API e toca vídeo/playlist.
@@ -48,7 +59,7 @@ src/
 index.html             Markup da HUD e diálogo de regras.
 ```
 
-Fluxo de um lance: `InputController` → `GameController.step(view, casa)` → valida contra `getLegalMoves` → anima a peça → se for captura e ainda houver saltos, guarda `pending` (peça travada) → senão `finishMove` → peças capturadas voam para a pilha lateral → `applyMove` → `CameraRig.goTo(próximo jogador)`.
+Fluxo de um lance: `InputController` → `GameController.step(view, casa)` → valida contra `getLegalMoves` → anima a peça → se for captura, `strike` (raio + trovão + clarão na tela) → se ainda houver saltos, guarda `pending` (peça travada) → senão `finishMove` → peças capturadas voam para a pilha lateral → `applyMove` → `CameraRig.goTo(próximo jogador)`.
 
 ### Música e fogo
 

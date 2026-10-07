@@ -1,9 +1,40 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { TABLE_Y } from './constants.js';
+import { TABLE_Y, TRAY } from './constants.js';
 
 const BG = 0x0f1116;
+
+/** Retângulo de cantos arredondados no plano xz, com o topo em TABLE_Y. */
+function createTray() {
+  const { halfX: w, halfZ: d, corner: r, thickness } = TRAY;
+  const shape = new THREE.Shape();
+  shape.moveTo(-w + r, -d);
+  shape.lineTo(w - r, -d);
+  shape.quadraticCurveTo(w, -d, w, -d + r);
+  shape.lineTo(w, d - r);
+  shape.quadraticCurveTo(w, d, w - r, d);
+  shape.lineTo(-w + r, d);
+  shape.quadraticCurveTo(-w, d, -w, d - r);
+  shape.lineTo(-w, -d + r);
+  shape.quadraticCurveTo(-w, -d, -w + r, -d);
+  const bevel = Math.min(0.05, thickness / 4);
+  const geo = new THREE.ExtrudeGeometry(shape, {
+    depth: thickness - bevel * 2,
+    bevelEnabled: true,
+    bevelThickness: bevel,
+    bevelSize: bevel,
+    bevelSegments: 3,
+    curveSegments: 12,
+  });
+  // A forma fica em xy e é extrudada em +z: deita e põe o topo em TABLE_Y.
+  geo.rotateX(Math.PI / 2);
+  geo.translate(0, TABLE_Y - bevel, 0);
+  const tray = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: TRAY.color, roughness: 0.85 }));
+  tray.receiveShadow = true;
+  tray.castShadow = true;
+  return tray;
+}
 
 export function createScene(container) {
   const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -27,15 +58,8 @@ export function createScene(container) {
   const camera = new THREE.PerspectiveCamera(42, container.clientWidth / container.clientHeight, 0.1, 100);
   camera.position.set(0, 9, 8);
 
-  // Mesa
-  const table = new THREE.Mesh(
-    new THREE.CircleGeometry(30, 64),
-    new THREE.MeshStandardMaterial({ color: 0x110c09, roughness: 0.9 }),
-  );
-  table.rotation.x = -Math.PI / 2;
-  table.position.y = TABLE_Y;
-  table.receiveShadow = true;
-  scene.add(table);
+  // Bandeja sob o tabuleiro (no lugar de uma mesa): o demônio a segura pela borda.
+  scene.add(createTray());
 
   // Luzes
   scene.add(new THREE.HemisphereLight(0xfff4e0, 0x1a1410, 0.6));

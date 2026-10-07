@@ -26,7 +26,7 @@ const flameVertex = /* glsl */ `
 `;
 
 // Ruído de valor periódico em x (o cilindro dá a volta sem costura).
-const noiseChunk = /* glsl */ `
+export const noiseChunk = /* glsl */ `
   float hash(vec2 p, float period) {
     p.x = mod(p.x, period);
     return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
@@ -149,7 +149,7 @@ const groundFragment = /* glsl */ `
   }
 `;
 
-function additive(fragmentShader, uniforms, vertexShader = flameVertex) {
+export function additive(fragmentShader, uniforms, vertexShader = flameVertex) {
   return new THREE.ShaderMaterial({
     uniforms,
     vertexShader,
@@ -199,8 +199,9 @@ export class FireRing {
 
     // Cilindro de raio 1; o raio real (e a inclinação) vem do wallVertex. Muitos
     // segmentos na volta para seguir as faixas, e na altura para a dobra no topo.
-    const geo = new THREE.CylinderGeometry(1, 1, FIRE.maxHeight, 512, 32, true);
-    geo.translate(0, FIRE.maxHeight / 2, 0);
+    // Altura 1: a altura máxima real é `mesh.scale.y = FIRE.maxHeight` (muda ao vivo).
+    const geo = new THREE.CylinderGeometry(1, 1, 1, 512, 32, true);
+    geo.translate(0, 0.5, 0);
     this.geometries.push(geo);
 
     // Duas camadas: externa e interna, com sementes diferentes. A base de cada uma
@@ -214,6 +215,7 @@ export class FireRing {
       uMinHeight: { value: 0.02 },
     };
     this.layerRadii = [];
+    this.flames = [];
     layers.forEach(({ seed }) => {
       const uRadius = { value: RADIUS };
       this.layerRadii.push(uRadius);
@@ -234,6 +236,7 @@ export class FireRing {
       mesh.frustumCulled = false; // a caixa do cilindro de raio 1 não cobre o anel deformado
       mesh.position.y = TABLE_Y;
       mesh.renderOrder = 2;
+      this.flames.push(mesh);
       this.materials.push(mat);
       this.group.add(mesh);
     });
@@ -286,8 +289,9 @@ export class FireRing {
     return THREE.MathUtils.clamp(spring(state, target, target > state.x ? FIRE.rise : FIRE.fall, dt), 0, 1);
   }
 
-  /** Lê FIRE.walls (pode mudar ao vivo pelo painel de ajustes). */
+  /** Lê FIRE.walls e FIRE.maxHeight (podem mudar ao vivo pelo painel de ajustes). */
   #applyWalls() {
+    for (const mesh of this.flames) mesh.scale.y = FIRE.maxHeight;
     const { inner, apex, meet, minHeight } = FIRE.walls;
     const [outer, innerR] = this.layerRadii;
     outer.value = RADIUS;

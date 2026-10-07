@@ -228,6 +228,13 @@ export function nextLandings(moves, from, prefix) {
   return [...set];
 }
 
+/** O jogador da vez desiste: devolve um NOVO estado com a vitória do adversário. */
+export function resign(state) {
+  if (state.result) return state;
+  const reason = state.turn === WHITE ? 'brancas desistiram' : 'pretas desistiram';
+  return { ...state, result: { type: 'win', winner: opponent(state.turn), reason } };
+}
+
 export function countPieces(state, color) {
   return state.board.filter((p) => p && p.color === color).length;
 }
