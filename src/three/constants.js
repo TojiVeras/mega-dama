@@ -194,3 +194,21 @@ export const DEMON = {
   breathe: 1, // intensidade do movimento parado (asas, cauda, cabeça); 0 = estátua
   roughness: 0.55, // o modelo vem com rugosidade 0 (plástico molhado); a textura modula
 };
+
+// Eddie (eddie.js): aparece com um raio quando o YouTube toca Iron Maiden, anda em
+// círculos em volta de tudo e vai embora com outro raio quando a música acaba.
+export const EDDIE = {
+  height: 12, // altura em casas (o demônio tem ~13)
+  // y dos pés. Do outro lado do tabuleiro, a câmera normal só vê de y ≈ -8 (borda do
+  // tabuleiro) a y ≈ -3,4 (topo da tela): assim cabem a cabeça, os punhos e a corrente.
+  ground: -15.6,
+  radius: 15, // raio do círculo (por fora do demônio, que vai até x ≈ -12)
+  speed: 2.4, // casas/s andando
+  stride: 0.32, // rad: abertura das pernas no passo
+  knee: 0.7, // rad: dobra do joelho da perna que vai à frente
+  twist: 0.1, // rad: giro do tronco contra as pernas
+  sway: 0.035, // rad: balanço de um lado para o outro
+  leaveDelay: 2.5, // s sem Iron Maiden antes de ir embora (troca de faixa na playlist não o espanta)
+  metalness: 0.2, // o modelo vem 100% metálico (fica escuro sem reflexo)
+  zapGlow: 4, // brilho elétrico quando o raio o atinge
+};

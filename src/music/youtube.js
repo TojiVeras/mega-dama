@@ -54,6 +54,11 @@ export class YouTubePlayer {
     return this.state === 1 || this.state === 3; // PLAYING, BUFFERING
   }
 
+  /** Vídeo atual: `{ video_id, title, author }` (null se ainda não há player). */
+  get video() {
+    return this.player?.getVideoData?.() ?? null;
+  }
+
   /** Tempo atual da música em segundos (0 se ainda não há player). */
   get currentTime() {
     return this.player?.getCurrentTime?.() ?? 0;

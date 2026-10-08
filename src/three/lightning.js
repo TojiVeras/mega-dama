@@ -52,7 +52,7 @@ function glowMaterial(color, opacity) {
 
 /** Um raio: cai do céu até (x, z), brilha, pisca e some. */
 class Strike {
-  constructor(parent, x, y, z) {
+  constructor(parent, x, y, z, ground) {
     this.group = new THREE.Group();
     parent.add(this.group);
     this.t = 0;
@@ -88,14 +88,14 @@ class Strike {
       const from = main[k];
       const len = rand(1.2, 3.2) * (1 - k / main.length);
       const to = from.clone().add(new THREE.Vector3(rand(-1, 1) * len, -rand(0.6, 1.2) * len, rand(-1, 1) * len));
-      to.y = Math.max(to.y, 0.4);
+      to.y = Math.max(to.y, ground + 0.4);
       addBolt(jagged(from, to, 4, 0.3), rand(0.35, 0.6), (k / main.length) * LIGHTNING.descend);
     }
 
     // Onda de choque e faíscas no ponto do impacto.
     this.shock = new THREE.Mesh(new THREE.RingGeometry(0.7, 1, 48), glowMaterial(LIGHTNING.halo, 0));
     this.shock.rotation.x = -Math.PI / 2;
-    this.shock.position.set(x, 0.01, z);
+    this.shock.position.set(x, ground, z);
     this.group.add(this.shock);
 
     const n = 48;
@@ -193,12 +193,13 @@ export class LightningField {
   }
 
   /**
-   * Raio em (x, z) com a ponta na altura y. Resolve quando o raio toca o chão.
+   * Raio em (x, z) com a ponta na altura y; `ground`: altura do chão (onda de choque).
+   * Resolve quando o raio toca o chão.
    */
-  strike(x, y, z) {
-    const s = new Strike(this.group, x, y, z);
+  strike(x, y, z, ground = 0.01) {
+    const s = new Strike(this.group, x, y, z, ground);
     this.strikes.push(s);
-    this.impactLight.position.set(x, 0.8, z);
+    this.impactLight.position.set(x, ground + 0.8, z);
     return new Promise((resolve) => {
       s.onHit = resolve;
     });

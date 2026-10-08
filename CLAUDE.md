@@ -41,6 +41,10 @@ src/
                        onda de choque, luz de impacto). Ajustes em LIGHTNING (constants.js).
     crater.js          CraterField: cratera queimada (texturas de canvas: cor, relevo, brasas) onde o raio
                        caiu. Fica até o fim do jogo; `tag` = history.length, some ao desfazer o lance.
+    eddie.js           Eddie (múmia do Iron Maiden, src/assets/eddie.glb otimizado com meshopt+webp): chega e vai
+                       embora com raio (LightningField.strike com `ground`) e anda em círculos. Sem esqueleto: o
+                       andar é feito no vertex shader (quadril/joelho/tronco). Ajustes em EDDIE (constants.js);
+                       no console: __damas.eddie.summon() / dismiss() / auto().
   sound/
     audio.js           AudioContext compartilhado (unlockAudio no primeiro pointerdown) e buffers de ruído.
     thunder.js         ThunderSound: som de raio sintetizado com Web Audio (estalo + estrondo + trovão).
@@ -49,6 +53,7 @@ src/
   music/
     youtubeUrl.js      parseYouTubeUrl (puro, testado): link/id -> { videoId, listId }.
     youtube.js         YouTubePlayer: carrega a IFrame API e toca vídeo/playlist.
+    maiden.js          isIronMaiden / eddieWanted (puro, testado): título/canal do vídeo -> Eddie em cena?
     tabAudio.js        TabAudio: captura o áudio da própria aba (getDisplayMedia) e mede o volume (RMS).
     spectrum.js        logBands / bandBins / bandDb: espectro -> faixas de frequência. Puro, testado.
     level.js           LevelTracker (volume em dB -> altura 0..1) e DelayLine. Puro, testado.

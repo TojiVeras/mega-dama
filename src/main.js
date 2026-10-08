@@ -4,6 +4,7 @@ import { GameController } from './controller.js';
 import { Hud } from './hud.js';
 import { InputController } from './input.js';
 import { MusicFireDriver } from './music/fireSync.js';
+import { eddieWanted } from './music/maiden.js';
 import { MusicPanel } from './music/panel.js';
 import { TuningPanel } from './music/tuning.js';
 import { createBoard } from './three/board.js';
@@ -14,6 +15,7 @@ import { PentagramFire } from './three/pentagram.js';
 import { GlowField } from './three/glow.js';
 import { CraterField } from './three/crater.js';
 import { Demon } from './three/demon.js';
+import { Eddie } from './three/eddie.js';
 import { LightningField } from './three/lightning.js';
 import { PieceSet } from './three/pieces.js';
 import { createScene } from './three/scene.js';
@@ -42,6 +44,8 @@ window.addEventListener(
   },
   { capture: true },
 );
+// Eddie: chega com um raio quando o YouTube toca Iron Maiden e anda em círculos.
+const eddie = new Eddie(scene, { camera, lightning, thunder, onStrike: () => hud.lightningFlash() });
 const rig = new CameraRig(camera, controls);
 // Aplica os ajustes salvos do painel "Ajustes do fogo" antes de tudo que lê FIRE.
 const tuning = new TuningPanel({
@@ -121,6 +125,8 @@ renderer.setAnimationLoop((timestamp) => {
   lightning.update(dt);
   craters.update(dt, time);
   demon.update(time);
+  eddie.setWanted(eddieWanted(music.player.state, music.player.video));
+  eddie.update(dt, music.player.audible);
   fireDriver.update(dt, time);
   fire.update(dt, time);
   pentagram.setCaptured(24 - game.state.board.filter(Boolean).length);
@@ -130,4 +136,4 @@ renderer.setAnimationLoop((timestamp) => {
 });
 
 // Útil para depurar no console do navegador.
-window.__damas = { game, pieces, rig, fire, pentagram, fireDriver, music, tuning, lightning, thunder, pieceSounds, craters, demon };
+window.__damas = { game, pieces, rig, fire, pentagram, fireDriver, music, tuning, lightning, thunder, pieceSounds, craters, demon, eddie };
