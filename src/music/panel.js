@@ -1,10 +1,17 @@
+import { PlaylistView } from './playlist.js';
 import { TabAudio, tabAudioSupported } from './tabAudio.js';
+import { dominantHue, firePalette } from './thumbColor.js';
 import { YouTubePlayer } from './youtube.js';
 import { parseYouTubeUrl } from './youtubeUrl.js';
 
 const $ = (id) => document.getElementById(id);
 const URL_KEY = 'damas3d.music.url';
 const SPECTRUM_KEY = 'damas3d.music.spectrum';
+const THEATER_KEY = 'damas3d.music.theater';
+const LIST_KEY = 'damas3d.music.list';
+// Tamanho em que a capa é lida para achar a cor do fogo.
+const THUMB_W = 48;
+const THUMB_H = 27;
 
 const MODE_LABEL = {
   audio: 'Fogo sincronizado com o áudio',
@@ -25,9 +32,13 @@ function storage(key, value) {
 /** Painel de música: player do YouTube e botão para sincronizar o fogo com o áudio. */
 export class MusicPanel {
   /** `onSpectrumChange(bool)`: alterna a altura do fogo entre volume e frequência. */
-  constructor({ flash, spectrum = false, onSpectrumChange }) {
+  constructor({ flash, spectrum = false, onSpectrumChange, onPalette }) {
     this.flash = flash;
     this.onSpectrumChange = onSpectrumChange;
+    this.onPalette = onPalette; // `{ core, mid, edge, light }` da capa da música, ou null
+    this.thumbCanvas = document.createElement('canvas');
+    this.thumbCanvas.width = THUMB_W;
+    this.thumbCanvas.height = THUMB_H;
     this.panel = $('music');
     this.toggleBtn = $('btn-music');
     this.form = $('music-form');
@@ -40,9 +51,17 @@ export class MusicPanel {
     };
     this.lastMode = null;
 
+    this.title = $('music-title');
+    this.theaterBtn = $('music-theater');
     this.player = new YouTubePlayer($('yt-player'), {
-      onStateChange: () => this.panel.classList.add('has-video'),
+      onStateChange: () => {
+        this.panel.classList.add('has-video');
+        this.syncPlaylist();
+      },
       onError: (msg) => this.flash(msg),
+    });
+    this.playlist = new PlaylistView($('music-playlist'), {
+      onPick: (index) => this.player.playAt(index),
     });
     this.tabAudio = new TabAudio({
       onEnded: () => {
@@ -62,6 +81,16 @@ export class MusicPanel {
     this.tuningBtn = $('btn-tuning');
     this.tuningBtn.addEventListener('click', () => this.setTuningOpen(!this.tuning.classList.contains('open')));
     $('tuning-close').addEventListener('click', () => this.setTuningOpen(false));
+    this.setTheater(storage(THEATER_KEY) !== '0'); // teatro é o padrão
+    this.theaterBtn.addEventListener('click', () => this.setTheater(!this.theater, true));
+    this.disc = $('music-disc');
+    this.disc.addEventListener('click', () => this.player.toggle());
+    $('music-prev').addEventListener('click', () => this.player.previous());
+    $('music-next').addEventListener('click', () => this.player.next());
+    this.listBtn = $('music-playlist-toggle');
+    this.listCount = $('music-playlist-count');
+    this.setListOpen(storage(LIST_KEY) === '1');
+    this.listBtn.addEventListener('click', () => this.setListOpen(!this.listOpen, true));
     this.toggleBtn.addEventListener('click', () => this.setOpen(!this.panel.classList.contains('open')));
     $('music-close').addEventListener('click', () => this.setOpen(false));
     this.form.addEventListener('submit', (e) => {
@@ -82,6 +111,65 @@ export class MusicPanel {
     this.modeButtons.spectrum.setAttribute('aria-pressed', String(on));
     if (save) storage(SPECTRUM_KEY, on ? '1' : '0');
     this.onSpectrumChange?.(on);
+  }
+
+  /** Abre/recolhe a lista de músicas do modo teatro. */
+  setListOpen(open, save = false) {
+    this.listOpen = open;
+    this.panel.classList.toggle('list-open', open);
+    this.listBtn.setAttribute('aria-expanded', String(open));
+    if (open) this.playlist.reveal();
+    if (save) storage(LIST_KEY, open ? '1' : '0');
+  }
+
+  /** Modo teatro: disco girando com a capa e a playlist, sem medidores, ajustes e explicações. */
+  setTheater(on, save = false) {
+    this.theater = on;
+    this.panel.classList.toggle('theater', on);
+    this.theaterBtn.setAttribute('aria-pressed', String(on));
+    if (on) {
+      this.setTuningOpen(false);
+      this.playlist.reveal();
+    }
+    if (save) storage(THEATER_KEY, on ? '1' : '0');
+  }
+
+  /** Atualiza a lista de músicas, a música atual e o título (a cada mudança de estado do player). */
+  syncPlaylist() {
+    const video = this.player.video;
+    const ids = this.player.playlist;
+    this.panel.classList.toggle('playing', this.player.playing);
+    this.panel.classList.toggle('has-list', ids.length > 0);
+    this.listCount.textContent = ids.length ? `${this.player.playlistIndex + 1} / ${ids.length}` : '';
+    if (video?.video_id && video.video_id !== this.discVideo) {
+      this.discVideo = video.video_id;
+      const thumb = `https://i.ytimg.com/vi/${video.video_id}/mqdefault.jpg`;
+      this.disc.style.setProperty('--thumb', `url(${thumb})`);
+      this.#paletteFrom(thumb, video.video_id);
+    }
+    this.playlist.setItems(ids);
+    this.playlist.setCurrent(this.player.playlistIndex);
+    this.playlist.setTitle(video?.video_id, video?.title);
+    this.title.textContent = video?.title ?? '';
+  }
+
+  // Lê a capa (bem reduzida) e passa adiante a paleta da cor que mais aparece nela.
+  #paletteFrom(thumb, videoId) {
+    const img = new Image();
+    img.crossOrigin = 'anonymous'; // i.ytimg.com libera CORS; sem isso o canvas não deixa ler
+    img.onload = () => {
+      if (videoId !== this.discVideo) return; // a música já trocou
+      let hue = null;
+      try {
+        const ctx = this.thumbCanvas.getContext('2d', { willReadFrequently: true });
+        ctx.drawImage(img, 0, 0, THUMB_W, THUMB_H);
+        hue = dominantHue(ctx.getImageData(0, 0, THUMB_W, THUMB_H).data);
+      } catch {
+        // Canvas bloqueado: fica com as cores padrão.
+      }
+      this.onPalette?.(hue == null ? null : firePalette(hue));
+    };
+    img.src = thumb;
   }
 
   setTuningOpen(open) {

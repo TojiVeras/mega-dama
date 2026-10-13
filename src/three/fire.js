@@ -161,6 +161,30 @@ export function additive(fragmentShader, uniforms, vertexShader = flameVertex) {
   });
 }
 
+/**
+ * Cores do fogo que trocam suavemente. `colors`: THREE.Color (dos uniforms/luz) por papel:
+ * `core`, `mid`, `edge`, `light` e `ground` (brilho do chão, segue `mid`).
+ */
+export class FireColors {
+  constructor(colors) {
+    this.colors = colors;
+    this.targets = null;
+  }
+
+  /** `palette`: `{ core, mid, edge, light }` como em FIRE; sem argumento volta ao padrão. */
+  set(palette) {
+    const p = palette ?? FIRE;
+    this.targets = {};
+    for (const key in this.colors) this.targets[key] = new THREE.Color(p[key === 'ground' ? 'mid' : key]);
+  }
+
+  update(dt) {
+    if (!this.targets) return;
+    const k = 1 - Math.exp(-FIRE.colorResponse * dt);
+    for (const key in this.colors) this.colors[key].lerp(this.targets[key], k);
+  }
+}
+
 export class FireRing {
   constructor(scene) {
     this.group = new THREE.Group();
@@ -261,7 +285,20 @@ export class FireRing {
     this.light.position.set(0, TABLE_Y + 3, 0);
     this.group.add(this.light);
 
+    this.colors = new FireColors({
+      core: colors.uCore.value,
+      mid: colors.uMid.value,
+      edge: colors.uEdge.value,
+      ground: groundMat.uniforms.uColor.value,
+      light: this.light.color,
+    });
+
     scene.add(this.group);
+  }
+
+  /** Troca as cores do fogo (`{ core, mid, edge, light }`); sem argumento volta às de FIRE. */
+  setPalette(palette) {
+    this.colors.set(palette);
   }
 
   /** Define a altura do fogo: 0 = apagado, 1 = altura máxima. Valores fora do intervalo são limitados. */
@@ -303,6 +340,7 @@ export class FireRing {
 
   update(dt, time) {
     this.#applyWalls();
+    this.colors.update(dt);
     this.spectrum = damp(this.spectrum, this.spectrumTarget, 6, dt);
     this.spectrumUniform.value = this.spectrum;
     if (this.fluid) {

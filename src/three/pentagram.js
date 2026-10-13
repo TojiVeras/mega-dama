@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { BOARD_EXTENT, damp, FIRE, PENTAGRAM, TABLE_Y } from './constants.js';
-import { additive, noiseChunk } from './fire.js';
+import { additive, FireColors, noiseChunk } from './fire.js';
 
 // Pentagrama de fogo dentro do anel: as 5 linhas da estrela (cada ponta ligada à
 // segunda seguinte) com o mesmo shader de chamas do anel. A força vem do número
@@ -176,8 +176,20 @@ export class PentagramFire {
     this.materials.push(groundMat);
     this.group.add(ground);
 
+    this.colors = new FireColors({
+      core: colors.uCore.value,
+      mid: colors.uMid.value,
+      edge: colors.uEdge.value,
+      ground: groundMat.uniforms.uColor.value,
+    });
+
     this.group.visible = false;
     scene.add(this.group);
+  }
+
+  /** Mesmas cores do anel (`FireRing.setPalette`); sem argumento volta às de FIRE. */
+  setPalette(palette) {
+    this.colors.set(palette);
   }
 
   /** Número de peças capturadas no jogo; a força máxima é com `PENTAGRAM.total`. */
@@ -187,6 +199,7 @@ export class PentagramFire {
 
   /** `ringLevel`: altura atual do anel de fogo (0..1), para pulsar junto com ele. */
   update(dt, time, ringLevel = 0) {
+    this.colors.update(dt);
     this.strength = damp(this.strength, this.target, PENTAGRAM.response, dt);
     const s = this.strength;
     const { minHeight, minOpacity, opacityCurve, pulse, total } = PENTAGRAM;

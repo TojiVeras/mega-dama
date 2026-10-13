@@ -43,6 +43,7 @@ export class YouTubePlayer {
     this.player = null;
     this.ready = null;
     this.state = -1;
+    this.startAt = null; // vídeo em que a playlist recém-carregada deve começar
   }
 
   get playing() {
@@ -64,6 +65,47 @@ export class YouTubePlayer {
     return this.player?.getCurrentTime?.() ?? 0;
   }
 
+  /** Ids dos vídeos da playlist/mix carregada, em ordem (vazio se for um vídeo solto). */
+  get playlist() {
+    return this.player?.getPlaylist?.() ?? [];
+  }
+
+  /** Posição do vídeo atual na playlist (-1 sem playlist). */
+  get playlistIndex() {
+    return this.player?.getPlaylistIndex?.() ?? -1;
+  }
+
+  /** Pula para a música `index` da playlist. */
+  playAt(index) {
+    this.player?.playVideoAt?.(index);
+  }
+
+  /** Pausa se estiver tocando; senão, toca. */
+  toggle() {
+    if (this.audible) this.player?.pauseVideo?.();
+    else this.player?.playVideo?.();
+  }
+
+  next() {
+    this.player?.nextVideo?.();
+  }
+
+  previous() {
+    this.player?.previousVideo?.();
+  }
+
+  // Playlist pronta (ou recusada): começa no vídeo do link, se ele estiver na lista.
+  #start() {
+    const videoId = this.startAt;
+    if (!videoId) return;
+    this.startAt = null;
+    const list = this.playlist;
+    // Mix às vezes vem sem o vídeo do link: começa do início dele (o player refaz o mix
+    // sozinho, então não adianta montar uma lista própria com o vídeo na frente).
+    if (list.length) this.player.playVideoAt(Math.max(list.indexOf(videoId), 0));
+    else this.player.loadVideoById(videoId);
+  }
+
   #create(YT) {
     return new Promise((resolve) => {
       this.player = new YT.Player(this.element, {
@@ -74,9 +116,14 @@ export class YouTubePlayer {
           onReady: () => resolve(this.player),
           onStateChange: (e) => {
             this.state = e.data;
+            if (e.data === 5) this.#start(); // YT.PlayerState.CUED
             this.onStateChange?.(e.data);
           },
-          onError: (e) => this.onError?.(ERRORS[e.data] ?? `Erro do YouTube (${e.data}).`),
+          onError: (e) => {
+            // Playlist que não abre: toca pelo menos o vídeo do link.
+            if (this.startAt) this.#start();
+            else this.onError?.(ERRORS[e.data] ?? `Erro do YouTube (${e.data}).`);
+          },
         },
       });
     });
@@ -89,10 +136,14 @@ export class YouTubePlayer {
       this.ready.catch(() => (this.ready = null));
     }
     const player = await this.ready;
-    if (listId) {
+    this.startAt = null;
+    if (listId && videoId) {
+      // O índice do vídeo na lista só é conhecido depois de carregá-la: prepara a playlist
+      // sem tocar e o #start pula para o vídeo (loadVideoById aqui descartaria a playlist).
+      this.startAt = videoId;
+      player.cuePlaylist({ list: listId, listType: 'playlist', index: 0 });
+    } else if (listId) {
       player.loadPlaylist({ list: listId, listType: 'playlist', index: 0 });
-      // Com vídeo específico, começa nele (o índice dentro da lista é desconhecido).
-      if (videoId) player.loadVideoById(videoId);
     } else {
       player.loadVideoById(videoId);
     }

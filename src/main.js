@@ -89,6 +89,11 @@ const music = new MusicPanel({
   onSpectrumChange: (on) => {
     if (fireDriver) fireDriver.useSpectrum = on;
   },
+  // Fogo com a cor que mais aparece na capa da música (null = cores padrão).
+  onPalette: (palette) => {
+    fire.setPalette(palette);
+    pentagram.setPalette(palette);
+  },
 });
 // Com música tocando, o fogo segue o volume do áudio (ou cada faixa de frequência).
 fireDriver = new MusicFireDriver({

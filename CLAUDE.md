@@ -53,7 +53,13 @@ src/
                        segue PieceSet.maxSpeed(). Pouso vem de PieceView.onLand (fim do moveTo / coroa).
   music/
     youtubeUrl.js      parseYouTubeUrl (puro, testado): link/id -> { videoId, listId }.
-    youtube.js         YouTubePlayer: carrega a IFrame API e toca vídeo/playlist.
+    youtube.js         YouTubePlayer: carrega a IFrame API e toca vídeo/playlist (playlist / playlistIndex /
+                       playAt para a lista).
+    playlist.js        PlaylistView: lista clicável (recolhível) da playlist/mix no modo teatro do painel, que é
+                       o padrão (botão "Teatro"): disco girando com a capa no lugar do vídeo (o iframe segue
+                       ali, invisível) + lista. Miniaturas de i.ytimg.com, títulos pelo oEmbed do YouTube.
+    thumbColor.js      dominantHue / firePalette (puro, testado): pixels da capa -> matiz que mais aparece ->
+                       paleta do fogo. MusicPanel.onPalette -> FireRing/PentagramFire.setPalette (FireColors).
     maiden.js          isIronMaiden / eddieWanted (puro, testado): título/canal do vídeo -> Eddie em cena?
     tabAudio.js        TabAudio: captura o áudio da própria aba (getDisplayMedia) e mede o volume (RMS).
     spectrum.js        logBands / bandBins / bandDb: espectro -> faixas de frequência. Puro, testado.

@@ -43,6 +43,7 @@ export const FIRE = {
   edge: 0xb3200a,
   light: 0xff7a2a,
   lightIntensity: 2.5,
+  colorResponse: 2.5, // velocidade da troca de cor (fogo com a cor da capa da música)
   // Movimento fluido com música: mola amortecida (sem tranco). Frequência em rad/s:
   // maior = acompanha mais rápido. Subida mais rápida que a descida.
   rise: 52,

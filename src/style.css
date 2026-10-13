@@ -270,7 +270,41 @@ button {
   color: var(--accent);
 }
 
+.music-status,
+.music-title {
+  margin-right: auto;
+}
+
+.music-title {
+  display: none;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.music-theater {
+  padding: 4px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--panel-border);
+  background: rgba(255, 255, 255, 0.05);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.music-theater:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.music-theater[aria-pressed='true'] {
+  border-color: rgba(224, 180, 76, 0.6);
+  color: var(--accent);
+}
+
 .music-close {
+  flex: none;
   width: 28px;
   height: 28px;
   border: 0;
@@ -415,6 +449,226 @@ button {
   font-size: 12px;
   line-height: 1.45;
   color: var(--muted);
+}
+
+/* Modo teatro: vídeo maior e playlist; some o que é do fogo (medidores, ajustes, explicação). */
+.music.theater {
+  max-height: calc(100vh - 120px);
+}
+
+/* No teatro o player continua ali (invisível, para a música tocar) embaixo do disco com a capa. */
+.music.theater .music-video {
+  position: relative;
+  aspect-ratio: auto;
+  background: none;
+  overflow: visible;
+}
+
+.music.theater.has-video .music-video {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 6px 0;
+}
+
+.music.theater .music-video iframe {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.music-disc,
+.music-skip {
+  display: none;
+}
+
+.music.theater .music-disc {
+  position: relative;
+  display: block;
+  flex: none;
+  width: 200px;
+  aspect-ratio: 1;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: #111 var(--thumb, none) center / cover;
+  box-shadow: 0 0 0 3px #16171c, 0 0 0 4px rgba(255, 255, 255, 0.12), 0 8px 24px rgba(0, 0, 0, 0.5);
+  animation: music-disc-spin 8s linear infinite paused;
+}
+
+.music.theater.playing .music-disc {
+  animation-play-state: running;
+}
+
+/* Reflexo do disco e furo no meio. */
+.music-disc::before,
+.music-disc::after {
+  content: '';
+  position: absolute;
+  border-radius: 50%;
+}
+
+.music-disc::before {
+  inset: 0;
+  background: conic-gradient(
+    rgba(255, 255, 255, 0.22),
+    transparent 12% 38%,
+    rgba(255, 255, 255, 0.18) 50%,
+    transparent 62% 88%,
+    rgba(255, 255, 255, 0.22)
+  );
+}
+
+.music-disc::after {
+  inset: 41%;
+  background: var(--bg);
+  box-shadow: 0 0 0 5px rgba(20, 22, 30, 0.75), 0 0 0 6px rgba(255, 255, 255, 0.25);
+}
+
+@keyframes music-disc-spin {
+  to { transform: rotate(360deg); }
+}
+
+.music.theater.has-list .music-skip {
+  position: relative;
+  display: block;
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--panel-border);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.05);
+  font-size: 16px;
+  line-height: 1;
+}
+
+.music-skip:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.music-playlist-toggle {
+  display: none;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--panel-border);
+  background: rgba(255, 255, 255, 0.05);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.music.theater.has-list .music-playlist-toggle {
+  display: flex;
+}
+
+.music-playlist-toggle:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.music-playlist-toggle b {
+  margin-right: auto;
+  font-size: 12px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
+
+.music-playlist-toggle i {
+  font-style: normal;
+  color: var(--muted);
+  transition: transform 0.2s;
+}
+
+.music.list-open .music-playlist-toggle i {
+  transform: rotate(180deg);
+}
+
+.music.theater .music-status,
+.music.theater .music-sync,
+.music.theater .music-note,
+.music.theater.has-video .music-form {
+  display: none;
+}
+
+.music.theater .music-title {
+  display: block;
+}
+
+.music.theater .music-video {
+  flex: none;
+}
+
+.music-playlist,
+.music-playlist-empty {
+  display: none;
+}
+
+.music.theater.list-open .music-playlist:not(.empty) {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+}
+
+.music.theater .music-playlist.empty + .music-playlist-empty {
+  display: block;
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--muted);
+}
+
+.music-playlist button {
+  flex: none;
+  display: grid;
+  grid-template-columns: 2.5ch 72px 1fr;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 6px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  text-align: left;
+  font-size: 13px;
+}
+
+.music-playlist button:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.music-playlist button[aria-current='true'] {
+  background: rgba(224, 180, 76, 0.14);
+  color: var(--accent);
+}
+
+.music-playlist .num {
+  text-align: right;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
+
+.music-playlist img {
+  display: block;
+  width: 72px;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  border-radius: 5px;
+  background: #000;
+}
+
+.music-playlist .title {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  line-height: 1.3;
 }
 
 .actions button.live {
@@ -656,6 +910,9 @@ dialog li {
   .music,
   .tuning {
     top: calc(max(12px, env(safe-area-inset-top)) + 100px);
+  }
+  .music.theater {
+    max-height: calc(100vh - 164px);
   }
 }
 

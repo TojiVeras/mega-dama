@@ -42,13 +42,25 @@
     <section id="music" class="music" aria-label="Música" inert>
       <div class="music-head">
         <span id="music-status" class="music-status">Fogo em modo demonstração</span>
+        <span id="music-title" class="music-title"></span>
+        <button id="music-theater" class="music-theater" title="Modo teatro: só o vídeo e a playlist" aria-pressed="false">Teatro</button>
         <button id="music-close" class="music-close" title="Fechar">✕</button>
       </div>
       <form id="music-form" class="music-form">
         <input id="music-url" type="url" inputmode="url" placeholder="Link do YouTube (vídeo ou playlist)" autocomplete="off" />
         <button class="primary">Tocar</button>
       </form>
-      <div class="music-video"><div id="yt-player"></div></div>
+      <div class="music-video">
+        <div id="yt-player"></div>
+        <button id="music-prev" class="music-skip" title="Música anterior">«</button>
+        <button id="music-disc" class="music-disc" title="Tocar / pausar" aria-label="Tocar ou pausar"></button>
+        <button id="music-next" class="music-skip" title="Próxima música">»</button>
+      </div>
+      <button id="music-playlist-toggle" class="music-playlist-toggle" aria-expanded="false" aria-controls="music-playlist">
+        <span>Playlist</span><b id="music-playlist-count"></b><i aria-hidden="true">▾</i>
+      </button>
+      <div id="music-playlist" class="music-playlist empty" aria-label="Playlist"></div>
+      <p class="music-playlist-empty">Cole um link de playlist ou mix do YouTube para ver as músicas aqui.</p>
       <div class="music-sync">
         <button id="music-sync" aria-pressed="false">🔥 Sincronizar fogo com o áudio</button>
         <div class="music-mode" role="group" aria-label="Altura do fogo">
