@@ -173,6 +173,8 @@ export class CraterField {
       const heat = Math.exp(-c.age / CRATER.cooling);
       const flicker = 0.85 + 0.15 * Math.sin(time * 9 + c.mesh.id) * Math.sin(time * 5.3 + c.mesh.id * 2);
       c.mesh.material.emissiveIntensity = (CRATER.emberGlow * heat + CRATER.residualGlow) * flicker;
+      // Escura no impacto; clareia junto com as brasas para não parecer uma peça preta.
+      c.mesh.material.opacity = CRATER.opacity + (1 - CRATER.opacity) * heat;
     }
   }
 }

@@ -168,6 +168,7 @@ export const CRATER = {
   emberGlow: 2.5, // brilho das brasas logo depois do impacto
   cooling: 2.5, // s: quão rápido as brasas esfriam
   residualGlow: 0.08, // brilho fraco que sobra nas rachaduras
+  opacity: 0.45, // opacidade depois de esfriar (no impacto é 1); menor = não se confunde com peça preta
 };
 
 // Sons das peças (sound/pieces.js): batidas ao segurar/pousar/empilhar e sopro ao mover.

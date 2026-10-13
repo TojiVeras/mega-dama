@@ -5,14 +5,15 @@ import { additive, noiseChunk } from './fire.js';
 // Pentagrama de fogo dentro do anel: as 5 linhas da estrela (cada ponta ligada à
 // segunda seguinte) com o mesmo shader de chamas do anel. A força vem do número
 // de peças capturadas (`setCaptured`): a altura cresce linearmente, a opacidade
-// cresce com uma curva (devagar no começo). Onde a linha passa sobre o tabuleiro
-// a base fica na superfície (y = 0); fora dele, na mesa (TABLE_Y).
+// cresce com uma curva (devagar no começo). Fica na mesa (TABLE_Y), embaixo do
+// tabuleiro: as chamas são cortadas onde a linha passa sob ele, para não
+// atrapalhar a visão do jogo; só as pontas da estrela aparecem em volta.
 
 const RING_RADIUS = Math.hypot(BOARD_EXTENT, BOARD_EXTENT) + FIRE.gap;
 const STEP = 0.06; // espaçamento das colunas ao longo da linha (unidades)
 const ROWS = 16; // divisões na altura
 
-const surfaceY = (x, z) => (Math.abs(x) <= BOARD_EXTENT && Math.abs(z) <= BOARD_EXTENT ? 0 : TABLE_Y);
+const underBoard = (x, z) => Math.abs(x) <= BOARD_EXTENT && Math.abs(z) <= BOARD_EXTENT;
 
 /** Segmentos da estrela: pares de pontas [a, b] em {x, z}. */
 function starSegments() {
@@ -40,18 +41,20 @@ function stripGeometry(rows, build) {
     const nz = dx / len;
     const cols = Math.ceil(len / STEP);
     const start = pos.length / 3;
+    const hidden = []; // colunas sob o tabuleiro (sem chama)
     for (let c = 0; c <= cols; c++) {
       const s = (c / cols) * len;
       const cx = a.x + (dx / len) * s;
       const cz = a.z + (dz / len) * s;
-      const base = surfaceY(cx, cz);
+      hidden.push(underBoard(cx, cz));
       for (let r = 0; r <= rows; r++) {
         const p = build(r / rows);
-        pos.push(cx + nx * p.offset, base + p.y, cz + nz * p.offset);
+        pos.push(cx + nx * p.offset, TABLE_Y + p.y, cz + nz * p.offset);
         uv.push(s, p.v);
       }
     }
     for (let c = 0; c < cols; c++) {
+      if (hidden[c] || hidden[c + 1]) continue;
       for (let r = 0; r < rows; r++) {
         const i = start + c * (rows + 1) + r;
         const j = i + rows + 1;

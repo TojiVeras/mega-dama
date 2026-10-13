@@ -36,7 +36,8 @@ src/
     fire.js            FireRing (anel de fogo: altura via setLevel 0..1 ou por faixa via setBands) e
                        RandomFireDriver (demo).
     pentagram.js       PentagramFire: pentagrama de fogo dentro do anel (mesmo shader de chamas). Força =
-                       capturas / 24 (setCaptured); altura linear, opacidade em curva. Ajustes em PENTAGRAM.
+                       capturas / 24 (setCaptured); altura linear, opacidade em curva. Fica na mesa, embaixo do
+                       tabuleiro (chamas cortadas sob ele). Ajustes em PENTAGRAM.
     lightning.js       LightningField: raio que cai na peça capturada (tubos aditivos, galhos, faíscas,
                        onda de choque, luz de impacto). Ajustes em LIGHTNING (constants.js).
     crater.js          CraterField: cratera queimada (texturas de canvas: cor, relevo, brasas) onde o raio
